@@ -64,11 +64,6 @@ def getListOfPeers():
     return PEERS
 
 
-# Adicione no topo:
-ACKS = {}  # {(sender, msg_number): set(peer_ids)}
-
-# Atualize a classe MsgHandler:
-
 class MsgHandler(threading.Thread):
     def __init__(self, sock):
         threading.Thread.__init__(self)
@@ -76,7 +71,9 @@ class MsgHandler(threading.Thread):
 
     def run(self):
         print('[LOG] Handler thread started. Waiting for handshakes...')
-        global handShakeCount, LIST_MESSAGES, lamport_clock, ACKS
+        global handShakeCount
+        global LIST_MESSAGES
+        global lamport_clock
 
         while handShakeCount < N:
             msgPack = self.sock.recv(1024)
@@ -93,13 +90,13 @@ class MsgHandler(threading.Thread):
             msgPack = self.sock.recv(1024)
             msg = pickle.loads(msgPack)
 
+            
             if msg[0] == -1:
                 stopCount += 1
                 print('[LOG] Received STOP signal from process', msg[1],
                       '| Total STOPs:', stopCount, '/', N)
                 if stopCount == N:
                     break
-
             elif isinstance(msg, tuple) and len(msg) == 3:
                 sender, msg_number, ts = msg
                 update_clock(ts)
@@ -107,21 +104,7 @@ class MsgHandler(threading.Thread):
                 LIST_MESSAGES.append(msg)
                 print('[LOG] Current message list size:', len(LIST_MESSAGES))
 
-                # Enviar ACK de volta ao remetente
-                ack_msg = ('ACK', sender, msg_number, ts, myself)
-                sendSocket.sendto(pickle.dumps(ack_msg), (PEERS[sender], PEER_UDP_PORT))
-                print(f'[LOG] Sent ACK for msg {msg_number} from {sender} to {PEERS[sender]}')
-
-            elif isinstance(msg, tuple) and msg[0] == 'ACK':
-                _, sender_orig, msg_number_orig, ts_orig, ack_sender = msg
-                key = (sender_orig, msg_number_orig)
-                if key not in ACKS:
-                    ACKS[key] = set()
-                ACKS[key].add(ack_sender)
-                print(f'[LOG] Received ACK for msg {msg_number_orig} from {sender_orig} by {ack_sender}')
-
-        # Aqui você ainda pode adicionar a lógica para só ordenar mensagens que receberam todos os ACKs.
-
+        
         print('[LOG] Starting message sorting...')
         LIST_MESSAGES.sort(key=lambda x: (x[2], x[0], x[1]))
         print('[LOG] Sorting completed. First few messages:')
@@ -143,7 +126,6 @@ class MsgHandler(threading.Thread):
 
         handShakeCount = 0
         LIST_MESSAGES = []
-        ACKS.clear()
         print('[LOG] Handler thread finished')
         exit(0)
 
