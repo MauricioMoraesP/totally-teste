@@ -7,3 +7,6 @@ The peer processes run the PeerCommunicatorUDP.py program, which has two separat
 
 
 In order to actually see the problem, it is necessary to run the peer processes on different networks (e.g., run some of the processes in one region of the cloud, whereas the others are run on another region).
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Link para a apresentação no Youtube: https://youtu.be/vJQu87alAvM
